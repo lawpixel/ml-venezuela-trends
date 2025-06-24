@@ -1,0 +1,38 @@
+name: MercadoLibre VE Daily Report
+
+on:
+  schedule:
+    - cron: '0 8 * * *'  # 4:00 AM Hora Venezuela (UTC-4)
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          sudo apt-get install -y libgl1 libglib2.0-0
+          
+      - name: Run scraping and processing
+        run: |
+          mkdir -p data
+          python src/scraper_ml_ve.py
+          python src/procesamiento.py
+          python src/generar_reporte.py
+          
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "github-actions@ml-report"
+          git config --local user.name "ML Reporter"
+          git add data/ docs/
+          git commit -m "📊 Daily update: $(date +'%Y-%m-%d')"
+          git push
