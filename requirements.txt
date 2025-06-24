@@ -2,4 +2,4 @@ pandas
 beautifulsoup4
 scikit-learn
 numpy
-requests
+playwright
