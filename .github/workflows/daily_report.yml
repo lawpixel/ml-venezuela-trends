@@ -19,8 +19,10 @@ jobs:
           
       - name: Install dependencies
         run: |
+          sudo apt-get update
+          sudo apt-get install -y libgl1 libglib2.0-0 libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 libgtk-3-0 libasound2
           pip install -r requirements.txt
-          sudo apt-get install -y libgl1 libglib2.0-0
+          playwright install chromium
           
       - name: Create data and docs directories
         run: |
@@ -29,7 +31,10 @@ jobs:
           
       - name: Run scraping and processing
         run: |
-          python src/scraper_ml_ve.py
+          # Ejecutar con reintentos automáticos
+          for i in {1..3}; do
+            python src/scraper_ml_ve.py && break || sleep 30
+          done
           python src/procesamiento.py
           python src/generar_reporte.py
           
@@ -40,3 +45,10 @@ jobs:
           git add data/ docs/
           git commit -m "📊 Daily update: $(date +'%Y-%m-%d')" || echo "No hay cambios para commitear"
           git push || echo "No hay cambios para empujar"
+        
+      - name: Upload debug artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: debug-data
+          path: data/
