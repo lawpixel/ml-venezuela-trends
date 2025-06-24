@@ -8,10 +8,11 @@ import random
 import os
 
 def scrape_ml_venezuela():
-    # URL actualizada con parámetros de búsqueda
-    url = "https://listado.mercadolibre.com.ve/ofertas?deal_ids=MLV779363-1&filter_applied=deal_ids&promotion_type=DEAL_OF_THE_DAY#D[A:DEAL_OF_THE_DAY]"
     
-    # User-Agents actualizados
+# Cambiar la URL a esta versión funcional
+url = "https://listado.mercadolibre.com.ve/ofertas#D[A:ofertas]"
+   
+# User-Agents actualizados
     user_agents = [
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15",
