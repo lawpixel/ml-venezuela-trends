@@ -22,9 +22,13 @@ jobs:
           pip install -r requirements.txt
           sudo apt-get install -y libgl1 libglib2.0-0
           
-      - name: Run scraping and processing
+      - name: Create data and docs directories
         run: |
           mkdir -p data
+          mkdir -p docs
+          
+      - name: Run scraping and processing
+        run: |
           python src/scraper_ml_ve.py
           python src/procesamiento.py
           python src/generar_reporte.py
@@ -34,5 +38,5 @@ jobs:
           git config --local user.email "github-actions@ml-report"
           git config --local user.name "ML Reporter"
           git add data/ docs/
-          git commit -m "📊 Daily update: $(date +'%Y-%m-%d')"
-          git push
+          git commit -m "📊 Daily update: $(date +'%Y-%m-%d')" || echo "No hay cambios para commitear"
+          git push || echo "No hay cambios para empujar"
