@@ -1,24 +1,82 @@
 
-        <!DOCTYPE html>
-        <html lang="es">
-        <head>
-            <meta charset="UTF-8">
-            <title>Reporte Diario - MercadoLibre VE</title>
-            <style>
-                body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-                h1 { color: #e74c3c; }
-            </style>
-        </head>
-        <body>
-            <h1>⚠️ No se encontraron productos hoy</h1>
-            <p>El scraping no recuperó datos en la ejecución de hoy (24/06/2025)</p>
-            <p>Posibles causas:</p>
-            <ul style="text-align: left; display: inline-block;">
-                <li>Cambios en la estructura de MercadoLibre</li>
-                <li>Bloqueo temporal de las solicitudes</li>
-                <li>Problemas de conectividad</li>
-            </ul>
-            <p>Intenta nuevamente mañana o revisa los logs de GitHub Actions.</p>
-        </body>
-        </html>
-        
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Reporte Diario - MercadoLibre VE</title>
+        <style>
+            body { 
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+                background: linear-gradient(135deg, #f5f7fa 0%, #e4e7f1 100%);
+                color: #333;
+                text-align: center;
+                padding: 50px 20px;
+            }
+            .container {
+                max-width: 800px;
+                margin: 0 auto;
+                background: white;
+                border-radius: 15px;
+                padding: 40px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            }
+            h1 { 
+                color: #e74c3c;
+                margin-bottom: 20px;
+            }
+            .error-icon {
+                font-size: 80px;
+                color: #e74c3c;
+                margin: 20px 0;
+            }
+            .suggestions {
+                text-align: left;
+                background: #f8f9fa;
+                padding: 20px;
+                border-radius: 10px;
+                margin: 30px 0;
+            }
+            .suggestions ul {
+                padding-left: 20px;
+            }
+            .suggestions li {
+                margin-bottom: 10px;
+            }
+            .timestamp {
+                color: #7f8c8d;
+                margin-top: 30px;
+                font-size: 0.9em;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="error-icon">⚠️</div>
+            <h1>No se encontraron productos hoy</h1>
+            <p>El scraping no recuperó datos en la ejecución de hoy</p>
+            
+            <div class="suggestions">
+                <p><strong>Posibles causas:</strong></p>
+                <ul>
+                    <li>Cambios en la estructura de MercadoLibre</li>
+                    <li>Bloqueo temporal de las solicitudes</li>
+                    <li>Problemas de conectividad</li>
+                    <li>Actualizaciones en los selectores CSS</li>
+                </ul>
+                <p><strong>Acciones recomendadas:</strong></p>
+                <ul>
+                    <li>Revisar los logs de GitHub Actions</li>
+                    <li>Verificar los screenshots en la carpeta /data</li>
+                    <li>Actualizar los selectores en el código</li>
+                    <li>Intentar nuevamente mañana</li>
+                </ul>
+            </div>
+            
+            <div class="timestamp">
+                <p>Reporte generado el: 26/06/2025 a las 19:25</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    
