@@ -17,12 +17,21 @@ jobs:
         with:
           python-version: '3.10'
           
-      - name: Install dependencies
+      - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgl1 libglib2.0-0 libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 libgtk-3-0 libasound2
+          sudo apt-get install -y \
+            libgl1 libglib2.0-0 libnss3 \
+            libatk1.0-0 libatk-bridge2.0-0 \
+            libcups2 libdrm2 libxkbcommon0 \
+            libxcomposite1 libxdamage1 libxfixes3 \
+            libxrandr2 libgbm1 libgtk-3-0 libasound2
+          
+      - name: Install Python dependencies
+        run: |
           pip install -r requirements.txt
           playwright install chromium
+          playwright install-deps
           
       - name: Create data and docs directories
         run: |
@@ -43,12 +52,16 @@ jobs:
           git config --local user.email "github-actions@ml-report"
           git config --local user.name "ML Reporter"
           git add data/ docs/
-          git commit -m "📊 Daily update: $(date +'%Y-%m-%d')" || echo "No hay cambios para commitear"
-          git push || echo "No hay cambios para empujar"
+          git commit -m "📊 Daily update: $(date +'%Y-%m-%d')" || echo "No changes to commit"
+          git push || echo "No changes to push"
         
       - name: Upload debug artifacts
         if: ${{ always() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: debug-data
-          path: data/
+          path: |
+            data/*.png
+            data/*.html
+            data/*.csv
+          retention-days: 3
