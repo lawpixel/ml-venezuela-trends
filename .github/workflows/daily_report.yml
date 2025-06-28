@@ -8,6 +8,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -17,7 +18,7 @@ jobs:
         with:
           python-version: '3.10'
           
-      - name: Install system dependencies
+      - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -27,41 +28,27 @@ jobs:
             libxcomposite1 libxdamage1 libxfixes3 \
             libxrandr2 libgbm1 libgtk-3-0 libasound2t64
           
-      - name: Install Python dependencies
-        run: |
           pip install -r requirements.txt
           playwright install chromium
           playwright install-deps
           
-      - name: Create data and docs directories
+      - name: Run scraping
+        timeout-minutes: 10
         run: |
-          mkdir -p data
-          mkdir -p docs
+          python src/scraper_ml_ve.py || echo "Scraping falló pero continuamos"
           
-      - name: Run scraping and processing
+      - name: Process data
         run: |
-          # Ejecutar con reintentos automáticos
-          for i in {1..3}; do
-            python src/scraper_ml_ve.py && break || sleep 30
-          done
           python src/procesamiento.py
           python src/generar_reporte.py
           
-      - name: Commit and push changes
-        run: |
-          git config --local user.email "github-actions@ml-report"
-          git config --local user.name "ML Reporter"
-          git add data/ docs/
-          git commit -m "📊 Daily update: $(date +'%Y-%m-%d')" || echo "No changes to commit"
-          git push || echo "No changes to push"
-        
-      - name: Upload debug artifacts
-        if: ${{ always() }}
+      - name: Upload results
         uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: debug-data
+          name: ml-report-data
           path: |
+            data/*.csv
             data/*.png
             data/*.html
-            data/*.csv
           retention-days: 3
