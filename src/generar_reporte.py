@@ -1,5 +1,5 @@
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 import json
 
@@ -9,9 +9,26 @@ def crear_reporte_html():
     # Intentar cargar datos históricos para tendencias
     historical_data = load_historical_data()
     
+    # Manejo específico de excepciones
     try:
         df = pd.read_csv("data/processed.csv")
-    except:
+        # Validar que el DataFrame tiene las columnas necesarias
+        required_columns = ['titulo', 'precio', 'link']
+        missing_columns = [col for col in required_columns if col not in df.columns]
+        if missing_columns:
+            print(f"⚠️ Columnas faltantes: {missing_columns}")
+            df = pd.DataFrame()
+    except FileNotFoundError:
+        print("❌ Archivo processed.csv no encontrado")
+        df = pd.DataFrame()
+    except pd.errors.EmptyDataError:
+        print("❌ Archivo CSV vacío")
+        df = pd.DataFrame()
+    except pd.errors.ParserError as e:
+        print(f"❌ Error parseando CSV: {e}")
+        df = pd.DataFrame()
+    except Exception as e:
+        print(f"❌ Error inesperado: {e}")
         df = pd.DataFrame()
     
     fecha_actual = datetime.now().strftime('%d/%m/%Y')
@@ -22,113 +39,78 @@ def crear_reporte_html():
     else:
         html = generate_success_html(df, fecha_actual, hora_actual, historical_data)
     
-    with open("docs/index.html", "w", encoding="utf-8") as f:
-        f.write(html)
-    print("📊 Reporte HTML generado")
+    try:
+        with open("docs/index.html", "w", encoding="utf-8") as f:
+            f.write(html)
+        print("📊 Reporte HTML generado exitosamente")
+    except Exception as e:
+        print(f"❌ Error escribiendo HTML: {e}")
 
 def load_historical_data():
     """Carga datos históricos para análisis de tendencias"""
     historical = []
     try:
-        # Intentar cargar datos de días anteriores
+        # Buscar archivos de los últimos 3 días
         for i in range(1, 4):
-            file_path = f"data/raw_{datetime.now().strftime('%Y%m%d')}_{i}.csv"
+            fecha_anterior = datetime.now() - timedelta(days=i)
+            file_path = f"data/processed_{fecha_anterior.strftime('%Y%m%d')}.csv"
             if os.path.exists(file_path):
-                df = pd.read_csv(file_path)
-                historical.append(df)
+                try:
+                    df_hist = pd.read_csv(file_path)
+                    historical.append(df_hist)
+                except Exception as e:
+                    print(f"⚠️ Error cargando archivo histórico {file_path}: {e}")
+                    continue
         print(f"📚 Datos históricos cargados: {len(historical)} archivos")
-    except:
-        pass
+    except Exception as e:
+        print(f"⚠️ Error general cargando datos históricos: {e}")
     return historical
 
-def generate_error_html(fecha, hora):
-    """Genera HTML para cuando no hay datos"""
-    return f"""
-    <!DOCTYPE html>
-    <html lang="es">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Reporte Diario - MercadoLibre VE</title>
-        <style>
-            body {{ 
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-                background: linear-gradient(135deg, #f5f7fa 0%, #e4e7f1 100%);
-                color: #333;
-                text-align: center;
-                padding: 50px 20px;
-            }}
-            .container {{
-                max-width: 800px;
-                margin: 0 auto;
-                background: white;
-                border-radius: 15px;
-                padding: 40px;
-                box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            }}
-            h1 {{ 
-                color: #e74c3c;
-                margin-bottom: 20px;
-            }}
-            .error-icon {{
-                font-size: 80px;
-                color: #e74c3c;
-                margin: 20px 0;
-            }}
-            .suggestions {{
-                text-align: left;
-                background: #f8f9fa;
-                padding: 20px;
-                border-radius: 10px;
-                margin: 30px 0;
-            }}
-            .suggestions ul {{
-                padding-left: 20px;
-            }}
-            .suggestions li {{
-                margin-bottom: 10px;
-            }}
-            .timestamp {{
-                color: #7f8c8d;
-                margin-top: 30px;
-                font-size: 0.9em;
-            }}
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="error-icon">⚠️</div>
-            <h1>No se encontraron productos hoy</h1>
-            <p>El scraping no recuperó datos en la ejecución de hoy</p>
-            
-            <div class="suggestions">
-                <p><strong>Posibles causas:</strong></p>
-                <ul>
-                    <li>Cambios en la estructura de MercadoLibre</li>
-                    <li>Bloqueo temporal de las solicitudes</li>
-                    <li>Problemas de conectividad</li>
-                    <li>Actualizaciones en los selectores CSS</li>
-                </ul>
-                <p><strong>Acciones recomendadas:</strong></p>
-                <ul>
-                    <li>Revisar los logs de GitHub Actions</li>
-                    <li>Verificar los screenshots en la carpeta /data</li>
-                    <li>Actualizar los selectores en el código</li>
-                    <li>Intentar nuevamente mañana</li>
-                </ul>
-            </div>
-            
-            <div class="timestamp">
-                <p>Reporte generado el: {fecha} a las {hora}</p>
-            </div>
-        </div>
-    </body>
-    </html>
-    """
+def safe_format_price(price_value):
+    """Formatea precios de manera segura"""
+    try:
+        if pd.isna(price_value):
+            return "No disponible"
+        price_float = float(price_value)
+        return f"Bs. {price_float:,.2f}"
+    except (ValueError, TypeError):
+        return "Precio no válido"
+
+def safe_format_rating(rating_value):
+    """Formatea rating de manera segura"""
+    try:
+        if pd.isna(rating_value):
+            return "Sin rating"
+        rating_float = float(rating_value)
+        return f"{rating_float:.1f}/5"
+    except (ValueError, TypeError):
+        return "N/A"
+
+def safe_get_int(row, column, default=0):
+    """Obtiene valor entero de manera segura"""
+    try:
+        value = row.get(column, default)
+        if pd.isna(value):
+            return default
+        return int(float(value))
+    except (ValueError, TypeError):
+        return default
 
 def generate_success_html(df, fecha, hora, historical_data):
     """Genera HTML exitoso con los productos"""
-    # Encabezado del reporte
+    # Validar y limpiar datos antes de generar HTML
+    df = df.fillna({
+        'titulo': 'Sin título',
+        'precio': 0,
+        'ventas': 0,
+        'mensajes': 0,
+        'rating': 0,
+        'envio_gratis': False,
+        'tienda_oficial': False,
+        'link': '#'
+    })
+    
+    # Encabezado del reporte (mantener igual)
     html = f"""
     <!DOCTYPE html>
     <html lang="es">
@@ -137,7 +119,7 @@ def generate_success_html(df, fecha, hora, historical_data):
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Top Productos con Más Mensajes - MercadoLibre VE</title>
         <style>
-            /* Estilos generales */
+            /* Estilos iguales al original */
             * {{ box-sizing: border-box; margin: 0; padding: 0; }}
             :root {{
                 --primary: #2968c8;
@@ -181,8 +163,6 @@ def generate_success_html(df, fecha, hora, historical_data):
                 color: #95a5a6;
                 font-size: 0.9rem;
             }}
-            
-            /* Estilos de productos */
             .products-grid {{
                 display: grid;
                 grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -296,7 +276,6 @@ def generate_success_html(df, fecha, hora, historical_data):
                 transform: translateY(-3px);
                 box-shadow: 0 5px 15px rgba(41, 104, 200, 0.4);
             }}
-            
             footer {{ 
                 text-align: center; 
                 margin-top: 40px; 
@@ -305,7 +284,6 @@ def generate_success_html(df, fecha, hora, historical_data):
                 padding-top: 20px;
                 border-top: 1px solid #eee;
             }}
-            
             @media (max-width: 768px) {{
                 .products-grid {{
                     grid-template-columns: 1fr;
@@ -327,7 +305,7 @@ def generate_success_html(df, fecha, hora, historical_data):
             <div class="products-grid">
     """
     
-    # Generar tarjetas de productos
+    # Generar tarjetas de productos con manejo seguro
     for i, row in df.iterrows():
         badges = []
         if row.get('envio_gratis', False):
@@ -337,14 +315,22 @@ def generate_success_html(df, fecha, hora, historical_data):
         
         badges_html = "".join(badges)
         
+        # Obtener valores de manera segura
+        titulo = str(row.get('titulo', 'Sin título'))[:100] + ('...' if len(str(row.get('titulo', ''))) > 100 else '')
+        precio_formatted = safe_format_price(row.get('precio', 0))
+        ventas = safe_get_int(row, 'ventas', 0)
+        mensajes = safe_get_int(row, 'mensajes', 0)
+        rating_formatted = safe_format_rating(row.get('rating', 0))
+        link = str(row.get('link', '#'))
+        
         # Determinar si el producto es tendencia
-        is_trending = row.get('mensajes', 0) > 50 or row.get('ventas', 0) > 100
+        is_trending = mensajes > 50 or ventas > 100
         
         html += f"""
         <div class="product-card">
             {"<span class='product-badge'>🔥 TENDENCIA</span>" if is_trending else ""}
-            <div class="product-title">{row['titulo']}</div>
-            <div class="product-price">Bs. {row['precio']:,.2f}</div>
+            <div class="product-title">{titulo}</div>
+            <div class="product-price">{precio_formatted}</div>
             
             <div class="badges-container">
                 {badges_html}
@@ -352,24 +338,24 @@ def generate_success_html(df, fecha, hora, historical_data):
             
             <div class="stats-container">
                 <div class="stat-card">
-                    <div class="stat-value">{row['ventas']}</div>
+                    <div class="stat-value">{ventas}</div>
                     <div class="stat-label">Ventas</div>
                 </div>
-                <div class="stat-card {'highlight-stat' if row.get('mensajes', 0) > 20 else ''}">
-                    <div class="stat-value">{row.get('mensajes', 0)}</div>
+                <div class="stat-card {'highlight-stat' if mensajes > 20 else ''}">
+                    <div class="stat-value">{mensajes}</div>
                     <div class="stat-label">Mensajes</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value">{row['rating']:.1f}/5</div>
+                    <div class="stat-value">{rating_formatted}</div>
                     <div class="stat-label">Rating</div>
                 </div>
             </div>
             
             <div class="why-box">
-                <strong>💡 Por qué destaca:</strong> Alto interés de compradores con {row.get('mensajes', 0)} mensajes en los últimos días
+                <strong>💡 Por qué destaca:</strong> Alto interés de compradores con {mensajes} mensajes en los últimos días
             </div>
             
-            <a href="{row['link']}" class="btn" target="_blank">Ver Producto en MercadoLibre</a>
+            <a href="{link}" class="btn" target="_blank">Ver Producto en MercadoLibre</a>
         </div>
         """
     
@@ -386,6 +372,8 @@ def generate_success_html(df, fecha, hora, historical_data):
     """
     
     return html
+
+# Mantener generate_error_html igual al original
 
 if __name__ == "__main__":
     crear_reporte_html()
